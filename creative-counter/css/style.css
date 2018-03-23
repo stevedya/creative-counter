@@ -1,0 +1,14 @@
+#creative-counter-col {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    text-align: center;
+}
+
+@media screen and (min-width: 768px) {
+
+    #creative-counter-col {
+        width: 33.333333%;
+    }
+
+}
