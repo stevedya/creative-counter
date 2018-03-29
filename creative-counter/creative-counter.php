@@ -8,24 +8,34 @@
  *
  */
 
+
 //Make secure?
-defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
+defined('ABSPATH') or die('No script kiddies please!');
 
 //load scripts
-require_once(plugin_dir_path(__FILE__). '/includes/creative-counter-scripts.php');
+require_once(plugin_dir_path(__FILE__) . '/includes/creative-counter-scripts.php');
 
 function creative_counter_shortcode()
 {
-    $name = get_option('creative_counter_names');
-    $number = get_option('creative_counter_numbers');
-    $result =  "<div id='creative-counter'>";
-    $result .=  "\t<div id='creative-counter-col'>";
-    $result .= "\t<span class='counter'>" . $number . "</span>";
-    $result .= "\t<span class='stat-name'>" . $name . "</span>";
-    $result .= "\t</div>";
+    $myStats = get_option('creative_counter_options');
+
+
+    $result = "<div id='creative-counter'>";
+
+    foreach ($myStats as $stat) {
+
+        $result .= "\t<div id='creative-counter-col'>";
+        $result .= "\t<span class='counter'>" . $stat->params->statAmount . "</span>";
+        $result .= "\t<span class='stat-name'>" . $stat->params->statName . "</span>";
+        $result .= "\t</div>";
+
+    }
+
     $result .= "</div>";
 
     return $result;
+
+
 }
 
 add_shortcode('creative-counter', 'creative_counter_shortcode');
@@ -51,51 +61,104 @@ dashicons-dashboard', 200);
 *
 */
 function creative_counter_settings_page()
-{
-    //Post to database!!
-    if(array_key_exists('submit_stat_update', $_POST)) {
-        update_option('creative_counter_names', $_POST['name']);
-        update_option('creative_counter_numbers', $_POST['number']);
+{ ?>
+
+
+    <div class="wrap">
+        <table>
+            <tr>
+                <th>
+                    Stat
+                </th>
+                <th>
+                    Name
+                </th>
+                <th>
+                    Amount
+                </th>
+                <th>
+                    Remove
+                </th>
+            </tr>
+            <tr>
+                <?php //Retrieving from the database
+                $myStats[] = '';
+                $myStats = get_option('creative_counter_options');
+                foreach ($myStats as $stat) { ?>
+                <td>
+                    <?php echo $stat->name; ?>
+                </td>
+                <td>
+                    <?php echo $stat->params->statName; ?>
+                </td>
+                <td>
+                    <?php echo $stat->params->statAmount; ?>
+                </td>
+                <td>
+                    <form action="" method="post">
+                        <input type="hidden" name="stat_id" value="<?php echo $stat->params->statId ?>">
+                        <input type="submit" name="stat_id_submit" class="button button-primary" value="Remove Stat">
+                    </form>
+                </td>
+            </tr>
+            <?php } ?>
+        </table>
+        <h2>Creative Counter</h2>
+        <p>Enter your new stat here.</p>
+        <form action="" method="post">
+            <label for="name">Name</label>
+            <input type="text" name="name" placeholder="Enter The Stat Name">
+            <label for="number">Number</label>
+            <input type="number" name="number" placeholder="Stat Amount">
+            <input type="hidden" name="stat_id" value="<?php echo uniqid(rand()); ?>">
+            <input type="submit" name="submit_stat_update" class="button button-primary" value="Add Stat">
+            <p>Refresh the page after adding the stat</p>
+        </form>
+        <br>
+    </div>
+
+    <?php
+
+    if (array_key_exists('submit_stat_update', $_POST)) {
+
+        //Post to database!!
+        $stat = new stdClass();
+        $stat->name = "Stat";
+        $stat->params->statId = $_POST['stat_id'];
+        $stat->params->statName = $_POST['name'];
+        $stat->params->statAmount = $_POST['number'];
+
+        $myStats[$stat->params->statId = $_POST['stat_id']] = $stat;
+
+        update_option('creative_counter_options', $myStats);
+
         ?>
         <div id="settings-error-settings-updated" class="updated settings-error notice is-dismissible">
             <strong>Stats have been saved!</strong>
         </div>
         <?php
+    } ?>
+
+    <form action="" method="post">
+        <input type="submit" name="delete_stats" class="button button-primary" value="Delete All Stats">
+    </form>
+
+    <?php
+    //remove one
+    if (isset($_POST['stat_id_submit'])) {
+        unset($myStats[$_POST['stat_id']]);
+        update_option('creative_counter_options', $myStats);
     }
-    //Retrieving from the database
-    //Say none if there is none
-    $name = get_option('creative_counter_names', '');
-    $number = get_option('creative_counter_numbers', '');
 
+    // delete all in the array
+    if (isset($_POST['delete_stats'])) {
+        $myStats = get_option('creative_counter_options');
+        $myStats = array();
+        update_option('creative_counter_options', $myStats);
+    }
     ?>
-    <div class="wrap">
-        <h2>Creative Counter</h2>
-        <form action="" method="post">
-            <div class="stat-cell">
-                <h3>Stat One</h3>
-                <label for="name">Name</label>
-                <input type="text" name="name" placeholder="Enter The Stat Name" value="<?php print $name; ?>">
-                <label for="number">Number</label>
-                <input type="number" name="number" placeholder="Stat Amount" value="<?php print $number ?>">
-            </div>
-            <div class="stat-cell">
-                <h3>Stat Two</h3>
-                <label for="name">Name</label>
-                <input type="text" name="name" placeholder="Enter The Stat Name" value="<?php print $name; ?>">
-                <label for="number">Number</label>
-                <input type="number" name="number" placeholder="Stat Amount" value="<?php print $number ?>">
-            </div>
-            <div class="stat-cell">
-                <h3>Stat Three</h3>
-                <label for="name">Name</label>
-                <input type="text" name="name" placeholder="Enter The Stat Name" value="<?php print $name; ?>">
-                <label for="number">Number</label>
-                <input type="number" name="number" placeholder="Stat Amount" value="<?php print $number ?>">
-            </div>
-            <input type="submit" name="submit_stat_update" class="button button-primary" value="Save Stats">
-        </form>
-
-    </div>
+    <!--    --><?php //print_r($myStats);
+    ?>
     <?php
 }
 
